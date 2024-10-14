@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Tecla from './Tecla';
 import { Howl } from 'howler';
 
@@ -33,7 +33,7 @@ const notas = [
 const Teclado = () => {
     const [activeKeys, setActiveKeys] = useState([]);
 
-    const playSound = (key) => {
+    const playSound = useCallback((key) => {
         const nota = notas.find((n) => n.key === key);
         if (nota) {
             const sound = new Howl({
@@ -41,8 +41,8 @@ const Teclado = () => {
                 volume: 1.0,
             });
             sound.play();
-            
-            if (!activeKeys.includes(key)){
+
+            if (!activeKeys.includes(key)) {
                 setActiveKeys((prevKeys) => [...prevKeys, key]);
             }
 
@@ -51,7 +51,7 @@ const Teclado = () => {
                 sound.stop();
             }, 1600);
         }
-    };
+    }, [activeKeys]); // Memoriza la función y solo cambia si activeKeys cambia
 
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -62,7 +62,7 @@ const Teclado = () => {
         const handleKeyUp = (event) => {
             const key = event.key.toLowerCase();
             setActiveKeys((prevKeys) => prevKeys.filter((k) => k !== key));
-        }
+        };
 
         window.addEventListener('keydown', handleKeyDown);
         window.addEventListener('keyup', handleKeyUp);
@@ -71,23 +71,22 @@ const Teclado = () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [activeKeys]);
+    }, [playSound]); // Aquí usamos playSound como dependencia sin problemas
 
     return (
         <div className="teclado">
             {notas.map((nota) => (
                 <Tecla 
-                key={nota.nota} 
-                nota={nota.nota} 
-                audio={nota.audio} 
-                isActive={activeKeys.includes(nota.key)}
-                isSharp={nota.isSharp}
-                keyLetter = {nota.key}
+                    key={nota.nota}
+                    nota={nota.nota}
+                    audio={nota.audio}
+                    isActive={activeKeys.includes(nota.key)}
+                    isSharp={nota.isSharp}
+                    keyLetter={nota.key}
                 />
-            ))} 
+            ))}
         </div>
     );
 };
 
 export default Teclado;
-
