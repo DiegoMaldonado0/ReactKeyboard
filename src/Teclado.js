@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Tecla from './Tecla';
 import { Howl } from 'howler';
 
@@ -32,15 +32,25 @@ const notas = [
 
 const Teclado = () => {
     const [activeKeys, setActiveKeys] = useState([]);
+    const soundsRef = useRef({}); // Para almacenar los sonidos precargados
 
-    const playSound = useCallback((key) => {
-        const nota = notas.find((n) => n.key === key);
-        if (nota) {
+    // Pre-cargar los sonidos al montar el componente
+    useEffect(() => {
+        notas.forEach((nota) => {
             const sound = new Howl({
                 src: [nota.audio],
                 volume: 1.0,
+                preload: true, // Asegura que los audios se carguen al inicio
             });
-            sound.play();
+            soundsRef.current[nota.key] = sound; // Guardamos el sonido en soundsRef
+        });
+    }, []);
+
+    const playSound = useCallback((key) => {
+        const sound = soundsRef.current[key];
+        if (sound) {
+            sound.stop(); // Detiene cualquier reproducción anterior
+            sound.play(); // Reproduce el sonido
 
             if (!activeKeys.includes(key)) {
                 setActiveKeys((prevKeys) => [...prevKeys, key]);
@@ -48,10 +58,9 @@ const Teclado = () => {
 
             setTimeout(() => {
                 setActiveKeys((prevKeys) => prevKeys.filter((k) => k !== key));
-                sound.stop();
             }, 1600);
         }
-    }, [activeKeys]); // Memoriza la función y solo cambia si activeKeys cambia
+    }, [activeKeys]);
 
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -71,7 +80,7 @@ const Teclado = () => {
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [playSound]); // Aquí usamos playSound como dependencia sin problemas
+    }, [playSound]);
 
     return (
         <div className="teclado">
